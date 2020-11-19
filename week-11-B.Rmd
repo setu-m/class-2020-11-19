@@ -34,23 +34,101 @@ week_11_folds <- vfold_cv(week_11_train, v = 5)
 
 **Prompt:** Explore a variety models which explain `primary_06` as a function of the variables in our data set. Make sure to explore some interaction terms. 
 
+```{r}
+# model 1
+mod_1_wfl <- workflow() %>% 
+  add_model(linear_reg() %>% 
+              set_engine("lm")) %>% 
+  add_recipe(recipe(primary_06 ~ treatment + sex,
+                    data = week_11_train)) 
+mod_1_wfl %>% 
+  fit(data = week_11_train) %>% 
+  predict(new_data = week_11_test) %>% 
+  bind_cols(week_11_test %>% select(primary_06)) %>% 
+  metrics(truth = primary_06, estimate = `.pred`)
+
+# model 2
+mod_2_wfl <- workflow() %>% 
+  add_model(linear_reg() %>% 
+              set_engine("lm")) %>% 
+  add_recipe(recipe(primary_06 ~ treatment + sex,
+                    data = week_11_train) %>%
+  step_dummy(all_nominal()) %>%
+  step_interact(~ treatment:sex))
+  
+
+# Don't forget: step_interact should be inside the add recipe
+
+
+mod_2_wfl %>% 
+  fit(data = week_11_train) %>% 
+  predict(new_data = week_11_test) %>% 
+  bind_cols(week_11_test %>% select(primary_06)) %>% 
+  metrics(truth = primary_06, estimate = `.pred`)
+
+
+```
+
+
 * Come up with at least two models that a) you like and would be willing to defend and b) are somewhat different from one another. The two most common model types in these situations are "simple" and "full". The former includes a minimum number of variables. The latter errs on the side of variable inclusion and the creation of interaction terms.
 
 * Which data set should we use for this? Why?
 
+# training dataset; so we can build the model on something that is represenative of the data; and when predicting and ifguring out RMSE, the testing dataset
+
 * What does it mean if, for example, the coefficient of `treatmentNeighbors` varies across models?
+
+# certain model 
 
 * Do things change if we start using all the data? Is there a danger in doing so?
 
+# over fit the model; less representative
 
 ## Scene 2
 
 **Prompt:** Compare your two models using cross-validation.
 
+```{r}
+mod_1_wfl <- workflow() %>% 
+  add_model(linear_reg() %>% 
+              set_engine("lm")) %>% 
+  add_recipe(recipe(primary_06 ~ treatment + sex,
+                    data = week_11_train)) 
+mod_1_res <- 
+  mod_1_wfl %>% 
+  fit_resamples(resamples = week_11_folds, 
+                control = control_resamples(save_pred = TRUE)) %>%
+  collect_metrics()
+
+#4.63
+
+mod_2_wfl <- workflow() %>% 
+  add_model(linear_reg() %>% 
+              set_engine("lm")) %>% 
+  add_recipe(recipe(primary_06 ~ treatment + sex,
+                    data = week_11_train) %>%
+  step_dummy(all_nominal()) %>%
+    step_interact(~ starts_with("treatment"):starts_with("sex")))
+
+mod_2_res <- 
+  mod_2_wfl %>% 
+  fit_resamples(resamples = week_11_folds, 
+                control = control_resamples(save_pred = TRUE)) %>%
+  collect_metrics()
+
+# 4.6
+```
+
+
 
 ## Scene 3
 
 **Prompt:** Fit the model and then estimate what RMSE will be in the future.
+
+```{r}
+
+```
+
 
 * If you have time, redo all the important steps above with the full data set.
 
